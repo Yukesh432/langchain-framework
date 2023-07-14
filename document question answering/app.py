@@ -6,8 +6,8 @@ from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceInstructEmbed
 from langchain.vectorstores import FAISS
 from langchain.memory import ConversationBufferMemory 
 from langchain.chains import ConversationalRetrievalChain
-
-
+from htmltemplate import css, bot_template, user_template
+from langchain.llms import HuggingFaceHub
 def get_pdf_text(pdf_docs):
     #variable to store all of the text from pdf
     text= ""
@@ -33,7 +33,7 @@ def get_vectorstore(text_chunks):
     return vectorstore
 
 def get_conversation_chain(vectorstore):
-    llm= "xyz"
+    llm= HuggingFaceHub(repo_id="LLMs/Alpaca-LoRA-7B-elina", model_kwargs={"temperature":0.5, "max_length":512})
     memory= ConversationBufferMemory(memory_key='chat_history', return_messages= True)
     conversation_chain= ConversationalRetrievalChain.from_llm(
         llm= llm,
@@ -43,16 +43,27 @@ def get_conversation_chain(vectorstore):
     return conversation_chain
 
 
+def handle_user_input(user_question):
+    response= st.session_state.conversation({'question': user_question})
+    st.write(response)
+
 
 def main():
     load_dotenv()
     st.set_page_config(page_title= "Chat with multiple document(pdf)", page_icon=":books:")
 
+    st.write(css, unsafe_allow_html=True)
+
     if "conversation" not in st.session_state:
         st.session_state.conversation= None
 
     st.header("Chat with docs... :books:")
-    st.text_input("Ask question about your documents:")
+    user_question= st.text_input("Ask question about your documents:")
+    if user_question:
+        handle_user_input(user_question)
+
+    st.write(user_template.replace("{{MSG}}", "Hello Bot"), unsafe_allow_html=True)
+    st.write(bot_template.replace("{{MSG}}", "Hello Human"), unsafe_allow_html=True)
 
     with st.sidebar:
         st.subheader("Your document here...")
