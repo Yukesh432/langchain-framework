@@ -8,6 +8,10 @@ from langchain.memory import ConversationBufferMemory
 from langchain.chains import ConversationalRetrievalChain
 from htmltemplate import css, bot_template, user_template
 from langchain.llms import HuggingFaceHub
+from langchain.llms import CTransformers
+from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
+
+
 def get_pdf_text(pdf_docs):
     #variable to store all of the text from pdf
     text= ""
@@ -33,8 +37,14 @@ def get_vectorstore(text_chunks):
     return vectorstore
 
 def get_conversation_chain(vectorstore):
-    llm= HuggingFaceHub(repo_id="tiiuae/falcon-7b-instruct", model_kwargs={"temperature":0.5, "max_length":700})
-    
+
+    #using Hugging face hub
+    # llm= HuggingFaceHub(repo_id="tiiuae/falcon-7b-instruct", model_kwargs={"temperature":0.5, "max_length":1000})
+
+
+    #using Ctransformer LLM....(library not working)
+    llm= CTransformers(model="marella/gpt-2-ggml", callbacks=[StreamingStdOutCallbackHandler()])
+
     memory= ConversationBufferMemory(memory_key='chat_history', return_messages= True)
     conversation_chain= ConversationalRetrievalChain.from_llm(
         llm= llm,
