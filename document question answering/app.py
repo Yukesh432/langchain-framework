@@ -33,7 +33,8 @@ def get_vectorstore(text_chunks):
     return vectorstore
 
 def get_conversation_chain(vectorstore):
-    llm= HuggingFaceHub(repo_id="LLMs/Alpaca-LoRA-7B-elina", model_kwargs={"temperature":0.5, "max_length":512})
+    llm= HuggingFaceHub(repo_id="tiiuae/falcon-7b-instruct", model_kwargs={"temperature":0.5, "max_length":700})
+    
     memory= ConversationBufferMemory(memory_key='chat_history', return_messages= True)
     conversation_chain= ConversationalRetrievalChain.from_llm(
         llm= llm,
