@@ -4,11 +4,13 @@ from PyPDF2 import PdfReader
 from langchain.text_splitter import CharacterTextSplitter
 from langchain.embeddings import HuggingFaceEmbeddings, HuggingFaceInstructEmbeddings
 from langchain.vectorstores import FAISS
+from langchain.embeddings import OpenAIEmbeddings
 from langchain.memory import ConversationBufferMemory 
 from langchain.chains import ConversationalRetrievalChain
 from htmltemplate import css, bot_template, user_template
 from langchain.llms import HuggingFaceHub
-from langchain.llms import CTransformers
+# from langchain.llms import CTransformers
+from langchain.chat_models import ChatOpenAI
 from langchain.callbacks.streaming_stdout import StreamingStdOutCallbackHandler
 
 
@@ -31,7 +33,8 @@ def get_text_chunk(raw_text):
     return chunks
 
 def get_vectorstore(text_chunks):
-    embeddings= HuggingFaceEmbeddings()
+    # embeddings= HuggingFaceEmbeddings()
+    embeddings= OpenAIEmbeddings()
     # embeddings= HuggingFaceInstructEmbeddings(model_name= "hkunlp/instructor-xl")
     vectorstore= FAISS.from_texts(text_chunks, embedding=embeddings)
     return vectorstore
@@ -40,10 +43,11 @@ def get_conversation_chain(vectorstore):
 
     #using Hugging face hub
     # llm= HuggingFaceHub(repo_id="tiiuae/falcon-7b-instruct", model_kwargs={"temperature":0.5, "max_length":1000})
+    llm= ChatOpenAI(temperature=0.3, max_tokens=200)
 
 
     #using Ctransformer LLM....(library not working)
-    llm= CTransformers(model="marella/gpt-2-ggml", callbacks=[StreamingStdOutCallbackHandler()])
+    # llm= CTransformers(model="marella/gpt-2-ggml", callbacks=[StreamingStdOutCallbackHandler()])
 
     memory= ConversationBufferMemory(memory_key='chat_history', return_messages= True)
     conversation_chain= ConversationalRetrievalChain.from_llm(
@@ -56,8 +60,14 @@ def get_conversation_chain(vectorstore):
 
 def handle_user_input(user_question):
     response= st.session_state.conversation({'question': user_question})
-    st.write(response)
+    # st.write(response)
+    st.session_state.chat_history= response['chat_history']
 
+    for i, message in enumerate(st.session_state.chat_history):
+        if i%2==0:
+            st.write(user_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
+        else:
+            st.write(bot_template.replace("{{MSG}}", message.content), unsafe_allow_html=True)
 
 def main():
     load_dotenv()
@@ -67,6 +77,9 @@ def main():
 
     if "conversation" not in st.session_state:
         st.session_state.conversation= None
+    
+    if "chat_history" not in st.session_state:
+        st.session_state.chat_history= None
 
     st.header("Chat with docs... :books:")
     user_question= st.text_input("Ask question about your documents:")
