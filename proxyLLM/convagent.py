@@ -30,9 +30,9 @@ def _approve(_input: str) -> bool:
     resp = input(msg)
     return resp.lower() in ("yes", "y")
 
-callbacks = [HumanApprovalCallbackHandler(should_check=_should_check, approve=_approve)]
+# callbacks = [HumanApprovalCallbackHandler(should_check=_should_check, approve=_approve)]
 
 print(agent.run(
     "Who invented category theory in mathematics?",
-    callbacks=callbacks,
+    # callbacks=callbacks,
 ))
